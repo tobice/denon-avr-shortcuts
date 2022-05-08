@@ -15,18 +15,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import cz.tobice.denonavrshortcuts.ui.theme.DenonAVRShortcutsTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 enum class Screen(val route: String) {
     MAIN("main"),
     SAMPLE_ENUM_SETTING("sample_enum_setting")
 }
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +47,7 @@ fun AppRoot() {
             color = MaterialTheme.colors.background
         ) {
             val navController = rememberNavController()
-            val viewModel: MainViewModel = viewModel()
+            val viewModel: MainViewModel = hiltViewModel()
 
             NavHost(navController = navController, startDestination = Screen.MAIN.route) {
                 composable(Screen.MAIN.route) {

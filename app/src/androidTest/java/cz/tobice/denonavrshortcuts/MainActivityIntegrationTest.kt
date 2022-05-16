@@ -25,16 +25,6 @@ class MainActivityIntegrationTest {
     }
 
     @Test
-    fun toggleBooleanSetting() {
-        composeTestRule
-            .onNode(isToggleable())
-            .assertIsDisplayed()
-            .assertIsOff()
-            .performClick()
-            .assertIsOn()
-    }
-
-    @Test
     fun toggleEnumSetting() {
         // Open the setting screen
         composeTestRule

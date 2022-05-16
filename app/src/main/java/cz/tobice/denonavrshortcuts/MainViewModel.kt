@@ -4,12 +4,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import cz.tobice.denonavrshortcuts.settings.ui.ReceiverSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(): ViewModel() {
-    var booleanSettingValue by mutableStateOf(false)
+class MainViewModel @Inject constructor(
+    val settings: ReceiverSettings
+) : ViewModel() {
+    init {
+        settings.loadSettings()
+    }
 
     enum class EnumSettingOptions(val label: String) {
         OPTION_1("Option 1"),

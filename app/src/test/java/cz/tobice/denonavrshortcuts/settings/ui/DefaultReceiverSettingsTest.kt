@@ -38,7 +38,7 @@ class DefaultReceiverSettingsTest {
         advanceUntilIdle()
 
         settings.errorMessages.test {
-            getSingletonError(awaitItem()).message shouldBe "Sorry, operation failed"
+            getSingletonError(awaitItem()).message shouldBe "Sorry, failed to load the settings"
         }
     }
 

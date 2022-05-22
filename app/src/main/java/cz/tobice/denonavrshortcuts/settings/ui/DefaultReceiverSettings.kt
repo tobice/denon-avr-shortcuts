@@ -1,5 +1,6 @@
 package cz.tobice.denonavrshortcuts.settings.ui
 
+import android.util.Log
 import cz.tobice.denonavrshortcuts.core.ErrorMessage
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettings
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettingsRepository
@@ -13,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+
+private val TAG = DefaultReceiverSettings::class.simpleName!!
 
 class DefaultReceiverSettings @Inject constructor(
     private val coroutineScope: CoroutineScope,
@@ -44,7 +47,7 @@ class DefaultReceiverSettings @Inject constructor(
             surroundParameterSettingsRepository
                 .setCenterSpread(value)
                 .map { loadSurroundParameterSettings() }
-                .recoverCatching { addErrorMessage() }
+                .recoverCatching(handleError())
 
             dirtyCenterSpreadValue.value = null
         }
@@ -58,7 +61,7 @@ class DefaultReceiverSettings @Inject constructor(
     override fun loadSettings() {
         coroutineScope.launch {
             loadSurroundParameterSettings()
-                .recoverCatching { addErrorMessage() }
+                .recoverCatching(handleError("Sorry, failed to load the settings"))
         }
     }
 
@@ -77,9 +80,13 @@ class DefaultReceiverSettings @Inject constructor(
     override val errorMessages: StateFlow<List<ErrorMessage>>
         get() = _errorMessages
 
-    private fun addErrorMessage(message: String = "Sorry, operation failed") {
-        _errorMessages.update { it + ErrorMessage(message = message) }
-    }
+    private fun handleError(message: String = "Sorry, operation failed"):
+            (exception: Throwable) -> Unit =
+        { exception ->
+            Log.e(TAG, message, exception)
+            _errorMessages.update { it + ErrorMessage(message = message) }
+
+        }
 
     //
     // Helpers

@@ -1,20 +1,23 @@
 package cz.tobice.denonavrshortcuts
 
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
-
-import org.junit.Test
-import org.junit.runner.RunWith
-
 import org.junit.Rule
+import org.junit.Test
 
-@RunWith(AndroidJUnit4::class)
+@HiltAndroidTest
 class MainActivityIntegrationTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    var hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Before

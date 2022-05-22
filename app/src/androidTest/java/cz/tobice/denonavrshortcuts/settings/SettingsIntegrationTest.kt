@@ -1,43 +1,101 @@
 package cz.tobice.denonavrshortcuts.settings
 
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsToggleable
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onSiblings
+import androidx.compose.ui.test.performClick
 import cz.tobice.denonavrshortcuts.AppRoot
 import cz.tobice.denonavrshortcuts.MainActivity
+import cz.tobice.denonavrshortcuts.fakes.FakeReceiver
+import cz.tobice.denonavrshortcuts.testutils.TestDispatcherProviderModule.TrackedDefaultDispatcher
+import cz.tobice.denonavrshortcuts.testutils.TrackedDispatcher
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import io.kotest.matchers.shouldBe
+import org.junit.After
 import org.junit.Before
-
-import org.junit.Test
-import org.junit.runner.RunWith
-
 import org.junit.Rule
+import org.junit.Test
+import javax.inject.Inject
 
-@RunWith(AndroidJUnit4::class)
+@HiltAndroidTest
 class SettingsIntegrationTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    var hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Inject
+    @TrackedDefaultDispatcher
+    lateinit var trackedDispatcher: TrackedDispatcher
+
+    private lateinit var fakeReceiver: FakeReceiver
 
     @Before
     fun setup() {
-        composeTestRule.setContent {
-            AppRoot()
-        }
+        // The app is automatically pointed to the fake receiver's URL when run under test. This is
+        // achieved through a Hilt binding override.
+        fakeReceiver = FakeReceiver()
+        fakeReceiver.startHttpServer()
+
+        hiltRule.inject()
+
+        composeTestRule.registerIdlingResource(trackedDispatcher.getIdlingResource())
+    }
+
+    @After
+    fun tearDown() {
+        fakeReceiver.stopHttpServer()
     }
 
     @Test
     fun centerSpread_turnOn() {
-        composeTestRule
-            .onNode(hasText("Center Spread"))
+        fakeReceiver.centerSpread = false
+
+        launchApp()
+
+        composeTestRule.onNode(hasText("Center Spread"))
             .onSiblings()
             .onFirst()
             .assertIsDisplayed()
             .assertIsToggleable()
+            .assertIsOff()
             .performClick()
             .assertIsOn()
+
+        fakeReceiver.centerSpread shouldBe true
+    }
+
+    @Test
+    fun centerSpread_turnOff() {
+        fakeReceiver.centerSpread = true
+
+        launchApp()
+
+        composeTestRule.onNode(hasText("Center Spread"))
+            .onSiblings()
+            .onFirst()
+            .assertIsDisplayed()
+            .assertIsToggleable()
+            .assertIsOn()
+            .performClick()
+            .assertIsOff()
+
+        fakeReceiver.centerSpread shouldBe false
+    }
+
+    private fun launchApp() {
+        composeTestRule.setContent { AppRoot() }
     }
 
     // TODO: Add a failure scenario
 
-    // TODO: Add rotation
+    // TODO: Add a rotation scenario
 }

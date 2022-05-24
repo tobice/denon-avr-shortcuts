@@ -1,6 +1,7 @@
 package cz.tobice.denonavrshortcuts.settings.ui
 
 import android.util.Log
+import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule.IODispatcher
 import cz.tobice.denonavrshortcuts.core.ErrorMessage
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettings
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettingsRepository
@@ -18,7 +19,7 @@ import javax.inject.Inject
 private val TAG = DefaultReceiverSettings::class.simpleName!!
 
 class DefaultReceiverSettings @Inject constructor(
-    private val coroutineScope: CoroutineScope,
+    @IODispatcher private val coroutineScope: CoroutineScope,
     private val surroundParameterSettingsRepository: SurroundParameterSettingsRepository
 ) : ReceiverSettings {
 

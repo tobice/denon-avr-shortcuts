@@ -12,7 +12,7 @@ import androidx.compose.ui.test.performClick
 import cz.tobice.denonavrshortcuts.AppRoot
 import cz.tobice.denonavrshortcuts.MainActivity
 import cz.tobice.denonavrshortcuts.fakes.FakeReceiver
-import cz.tobice.denonavrshortcuts.testutils.TestDispatcherProviderModule.TrackedDefaultDispatcher
+import cz.tobice.denonavrshortcuts.testutils.TestDispatcherProviderModule.TrackedIODispatcher
 import cz.tobice.denonavrshortcuts.testutils.TrackedDispatcher
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -33,7 +33,7 @@ class SettingsIntegrationTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Inject
-    @TrackedDefaultDispatcher
+    @TrackedIODispatcher
     lateinit var trackedDispatcher: TrackedDispatcher
 
     private lateinit var fakeReceiver: FakeReceiver

@@ -1,7 +1,7 @@
 package cz.tobice.denonavrshortcuts.testutils
 
 import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule
-import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule.DefaultDispatcher
+import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule.IODispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -24,17 +24,17 @@ object TestDispatcherProviderModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class TrackedDefaultDispatcher
+    annotation class TrackedIODispatcher
 
     @Singleton
     @Provides
-    @TrackedDefaultDispatcher
-    fun providesTrackedDefaultDispatcher(): TrackedDispatcher =
-        TrackedDispatcher(Dispatchers.Default)
+    @TrackedIODispatcher
+    fun providesTrackedIODispatcher(): TrackedDispatcher =
+        TrackedDispatcher(Dispatchers.IO)
 
     @Singleton
     @Provides
-    @DefaultDispatcher
-    fun providesDefaultDispatcher(@TrackedDefaultDispatcher trackedDispatcher: TrackedDispatcher):
+    @IODispatcher
+    fun providesIODispatcher(@TrackedIODispatcher trackedDispatcher: TrackedDispatcher):
         CoroutineDispatcher = trackedDispatcher
 }

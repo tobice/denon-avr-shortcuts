@@ -21,10 +21,10 @@ object DispatcherProviderModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
-    annotation class DefaultDispatcher
+    annotation class IODispatcher
 
     @Singleton
     @Provides
-    @DefaultDispatcher
-    fun providesDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+    @IODispatcher
+    fun providesDefaultDispatcher(): CoroutineDispatcher = Dispatchers.IO
 }

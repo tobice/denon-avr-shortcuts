@@ -1,6 +1,6 @@
 package cz.tobice.denonavrshortcuts.core
 
-import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule.DefaultDispatcher
+import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule.IODispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,8 +15,11 @@ import javax.inject.Singleton
 object CoroutineScopeDispatcherModule {
 
     @Singleton
+    @IODispatcher
     @Provides
-    fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher): CoroutineScope {
+    fun providesCoroutineScopeWithIODispatcher(
+        @IODispatcher dispatcher: CoroutineDispatcher
+    ): CoroutineScope {
         return CoroutineScope(SupervisorJob() + dispatcher)
     }
 }

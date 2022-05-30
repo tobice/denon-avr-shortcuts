@@ -9,9 +9,11 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onSiblings
 import androidx.compose.ui.test.performClick
+import androidx.test.espresso.Espresso
 import cz.tobice.denonavrshortcuts.AppRoot
 import cz.tobice.denonavrshortcuts.MainActivity
 import cz.tobice.denonavrshortcuts.fakes.FakeReceiver
+import cz.tobice.denonavrshortcuts.settings.enums.audio.AudysseyDynamicVolume
 import cz.tobice.denonavrshortcuts.testutils.TestDispatcherProviderModule.TrackedIODispatcher
 import cz.tobice.denonavrshortcuts.testutils.TrackedDispatcher
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -89,6 +91,32 @@ class SettingsIntegrationTest {
             .assertIsOff()
 
         fakeReceiver.centerSpread shouldBe false
+    }
+
+    @Test
+    fun dynamicVolume_changeToHeavy() {
+        fakeReceiver.dynamicVolume = AudysseyDynamicVolume.OFF
+
+        launchApp()
+
+        // Open the Dynamic Volume setting screen
+        composeTestRule.onNode(hasText("Dynamic Volume (Off)"))
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule
+            .onNode(hasText("Heavy"))
+            .assertIsDisplayed()
+            .performClick()
+
+        // Go back to the main screen
+        Espresso.pressBack()
+
+        composeTestRule
+            .onNode(hasText("Dynamic Volume (Heavy)"))
+            .assertIsDisplayed()
+
+        fakeReceiver.dynamicVolume shouldBe AudysseyDynamicVolume.HEAVY
     }
 
     private fun launchApp() {

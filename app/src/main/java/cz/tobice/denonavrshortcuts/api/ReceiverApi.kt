@@ -1,5 +1,6 @@
 package cz.tobice.denonavrshortcuts.api
 
+import cz.tobice.denonavrshortcuts.api.entities.audio.AudysseyConfig
 import cz.tobice.denonavrshortcuts.api.entities.audio.SurroundParameterConfig
 import okhttp3.ResponseBody
 import retrofit2.http.GET
@@ -21,4 +22,13 @@ interface ReceiverApi {
     suspend fun setSurroundParameterConfig(
         @Query("data") config: SurroundParameterConfig
     ): ResponseBody
+
+    @GET("ajax/audio/get_config?type=9")
+    suspend fun getAudysseyConfig(): AudysseyConfig
+
+    /**
+     * @param data Example: <DynamicVolume>1</DynamicVolume>
+     */
+    @GET("ajax/audio/set_config?type=9")
+    suspend fun setAudysseyConfig(@Query("data") data: String): ResponseBody
 }

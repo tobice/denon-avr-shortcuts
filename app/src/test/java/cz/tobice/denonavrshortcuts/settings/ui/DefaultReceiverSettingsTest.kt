@@ -2,6 +2,8 @@ package cz.tobice.denonavrshortcuts.settings.ui
 
 import app.cash.turbine.test
 import cz.tobice.denonavrshortcuts.core.ErrorMessage
+import cz.tobice.denonavrshortcuts.settings.enums.audio.AudysseyDynamicVolume
+import cz.tobice.denonavrshortcuts.settings.fakes.FakeAudysseySettingsRepository
 import cz.tobice.denonavrshortcuts.settings.fakes.FakeSurroundParameterSettingsRepository
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -20,9 +22,13 @@ class DefaultReceiverSettingsTest {
     private lateinit var surroundParameterSettingsRepository:
         FakeSurroundParameterSettingsRepository
 
+    private lateinit var audysseySettingsRepository:
+        FakeAudysseySettingsRepository
+
     @Before
     fun init() {
         surroundParameterSettingsRepository = FakeSurroundParameterSettingsRepository()
+        audysseySettingsRepository = FakeAudysseySettingsRepository()
     }
 
     //
@@ -33,6 +39,8 @@ class DefaultReceiverSettingsTest {
     fun `Add error message when loading fails`() = runTest {
         val settings = getInstance(this)
         surroundParameterSettingsRepository.nextShouldFail()
+
+        // TODO: Add a scenario when multiple repository fetches fail
 
         settings.loadSettings()
         advanceUntilIdle()
@@ -127,6 +135,92 @@ class DefaultReceiverSettingsTest {
         }
     }
 
+    //
+    // Dynamic Volume
+    //
+
+    @Test
+    fun `Dynamic Volume is Heavy and not available on init`() = runTest {
+        val settings = getInstance(this)
+
+        settings.dynamicVolumeUiState.test {
+            awaitItem() shouldBe ReceiverSettingUiState(
+                value = AudysseyDynamicVolume.HEAVY, status = Status.NOT_AVAILABLE
+            )
+        }
+    }
+
+    @Test
+    fun `Dynamic Volume is MEDIUM and ready when loaded`() {
+        audysseySettingsRepository.dynamicVolume = AudysseyDynamicVolume.MEDIUM
+
+        runWithLoadedSettings { settings ->
+            settings.dynamicVolumeUiState.test {
+                awaitItem() shouldBe ReceiverSettingUiState(
+                    value = AudysseyDynamicVolume.MEDIUM, status = Status.READY
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `Dynamic Volume is HEAVY and unavailable when loaded but reported as unavailable`() {
+        audysseySettingsRepository.dynamicVolume = null
+
+        runWithLoadedSettings { settings ->
+            settings.dynamicVolumeUiState.test {
+                awaitItem() shouldBe ReceiverSettingUiState(
+                    value = AudysseyDynamicVolume.HEAVY, Status.NOT_AVAILABLE
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `Dynamic Value is updating when changing value`()  {
+        audysseySettingsRepository.dynamicVolume = AudysseyDynamicVolume.HEAVY
+
+        runWithLoadedSettings { settings ->
+            settings.dynamicVolumeUiState.test { awaitItem().status shouldBe Status.READY }
+            settings.setDynamicVolume(AudysseyDynamicVolume.MEDIUM)
+            settings.dynamicVolumeUiState.test { awaitItem().status shouldBe Status.UPDATING }
+        }
+    }
+
+    @Test
+    fun `Dynamic Value changes to LIGHT`() {
+        audysseySettingsRepository.dynamicVolume = AudysseyDynamicVolume.HEAVY
+
+        runWithLoadedSettings { settings ->
+            settings.setDynamicVolume(AudysseyDynamicVolume.LIGHT)
+            advanceUntilIdle()
+
+            settings.dynamicVolumeUiState.test {
+                awaitItem().value shouldBe AudysseyDynamicVolume.LIGHT
+            }
+            audysseySettingsRepository.dynamicVolume shouldBe AudysseyDynamicVolume.LIGHT
+        }
+    }
+
+    @Test
+    fun `Dynamic Value fails to change and adds an error message`() {
+        audysseySettingsRepository.dynamicVolume = AudysseyDynamicVolume.HEAVY
+
+        runWithLoadedSettings { settings ->
+            audysseySettingsRepository.nextShouldFail()
+
+            settings.setDynamicVolume(AudysseyDynamicVolume.LIGHT)
+            advanceUntilIdle()
+
+            settings.dynamicVolumeUiState.test {
+                awaitItem().value shouldBe AudysseyDynamicVolume.HEAVY
+            }
+            settings.errorMessages.test {
+                getSingletonError(awaitItem()).message shouldBe "Sorry, operation failed"
+            }
+        }
+    }
+
     private fun runWithLoadedSettings(testBody: suspend TestScope.(ReceiverSettings) -> Unit) {
         runTest {
             val settings = getInstance(this)
@@ -138,7 +232,10 @@ class DefaultReceiverSettingsTest {
     }
 
     private fun getInstance(coroutineScope: CoroutineScope) =
-        DefaultReceiverSettings(coroutineScope, surroundParameterSettingsRepository)
+        DefaultReceiverSettings(
+            coroutineScope,
+            surroundParameterSettingsRepository,
+            audysseySettingsRepository)
 
     companion object {
         private fun getSingletonError(messages: List<ErrorMessage>): ErrorMessage {

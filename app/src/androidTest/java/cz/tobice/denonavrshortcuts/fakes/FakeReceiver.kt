@@ -1,5 +1,6 @@
 package cz.tobice.denonavrshortcuts.fakes
 
+import cz.tobice.denonavrshortcuts.settings.enums.audio.AudysseyDynamicVolume
 import cz.tobice.denonavrshortcuts.utils.booleanToOneZero
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit
  */
 class FakeReceiver {
     var centerSpread: Boolean? = null
+    var dynamicVolume: AudysseyDynamicVolume? = null
 
     private val server = MockWebServer()
 
@@ -38,8 +40,13 @@ class FakeReceiver {
             // are avoiding unnecessary complexities and levels of indirection. This is a simple yet
             // descriptive way of defining how the receiver should handle different operations.
             "/ajax/audio/get_config?type=4" -> getSurroundSettingsConfig()
+            "/ajax/audio/get_config?type=9" -> getAudysseySettingsConfig()
             "/ajax/audio/set_config?type=4&data=${encode("<SurroundParameter><CenterSpread>0</CenterSpread></SurroundParameter>")}" -> setSettingValue { centerSpread = false }
             "/ajax/audio/set_config?type=4&data=${encode("<SurroundParameter><CenterSpread>1</CenterSpread></SurroundParameter>")}" -> setSettingValue { centerSpread = true }
+            "/ajax/audio/set_config?type=9&data=${encode("<DynamicVolume>1</DynamicVolume>")}" -> setSettingValue { dynamicVolume = AudysseyDynamicVolume.HEAVY }
+            "/ajax/audio/set_config?type=9&data=${encode("<DynamicVolume>2</DynamicVolume>")}" -> setSettingValue { dynamicVolume = AudysseyDynamicVolume.MEDIUM }
+            "/ajax/audio/set_config?type=9&data=${encode("<DynamicVolume>3</DynamicVolume>")}" -> setSettingValue { dynamicVolume = AudysseyDynamicVolume.LIGHT }
+            "/ajax/audio/set_config?type=9&data=${encode("<DynamicVolume>4</DynamicVolume>")}" -> setSettingValue { dynamicVolume = AudysseyDynamicVolume.OFF }
             else -> MockResponse().setResponseCode(400)
         }
     }
@@ -55,6 +62,20 @@ class FakeReceiver {
             }
 
             append("</SurroundParameter>")
+        }
+    }
+
+    private fun getAudysseySettingsConfig() = asXmlResponse {
+        buildString {
+            append("<Audyssey>")
+
+            if (dynamicVolume == null) {
+                append("<DynamicVolume display=\"1\"/>")
+            } else {
+                append("<DynamicVolume display=\"3\">${dynamicVolume!!.receiverValue}</DynamicVolume>")
+            }
+
+            append("</Audyssey>")
         }
     }
 

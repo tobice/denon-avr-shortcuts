@@ -1,5 +1,7 @@
 package cz.tobice.denonavrshortcuts.settings
 
+import cz.tobice.denonavrshortcuts.settings.repositories.AudysseySettingsRepository
+import cz.tobice.denonavrshortcuts.settings.repositories.DefaultAudysseySettingsRepository
 import cz.tobice.denonavrshortcuts.settings.repositories.DefaultSurroundParameterSettingsRepository
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettingsRepository
 import cz.tobice.denonavrshortcuts.settings.ui.DefaultReceiverSettings
@@ -22,4 +24,9 @@ abstract class SettingsModule {
     abstract fun bindSurroundParameterSettingsRepository(
         defaultSurroundParameterSettingsRepository: DefaultSurroundParameterSettingsRepository
     ): SurroundParameterSettingsRepository
+
+    @Binds
+    abstract fun bindAudysseySettingsRepository(
+        defaultAudysseySettingsRepository: DefaultAudysseySettingsRepository
+    ): AudysseySettingsRepository
 }

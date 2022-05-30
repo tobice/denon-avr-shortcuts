@@ -1,6 +1,7 @@
 package cz.tobice.denonavrshortcuts.settings.ui
 
 import cz.tobice.denonavrshortcuts.core.ErrorMessage
+import cz.tobice.denonavrshortcuts.settings.enums.audio.AudysseyDynamicVolume
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -25,6 +26,12 @@ interface ReceiverSettings {
 
     /** Set the Center Spread setting value. */
     val setCenterSpread: (Boolean) -> Unit
+
+    /** UI state of the Audyssey Dynamic Volume setting */
+    val dynamicVolumeUiState: StateFlow<ReceiverSettingUiState<AudysseyDynamicVolume>>
+
+    /** Set the Audyssey Dynamic Volume setting value. */
+    val setDynamicVolume: (AudysseyDynamicVolume) -> Unit
 
     /** (Re)load all settings from the receiver. */
     fun loadSettings()

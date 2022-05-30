@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Switch
@@ -17,19 +18,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import cz.tobice.denonavrshortcuts.settings.enums.audio.AudysseyDynamicVolume
 import cz.tobice.denonavrshortcuts.settings.ui.ReceiverSettingUiState
 import cz.tobice.denonavrshortcuts.ui.theme.DenonAVRShortcutsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 enum class Screen(val route: String) {
     MAIN("main"),
-    SAMPLE_ENUM_SETTING("sample_enum_setting")
+    DYNAMIC_VOLUME("dynamic_volume")
 }
 
 @AndroidEntryPoint
@@ -56,8 +59,10 @@ fun AppRoot() {
                 composable(Screen.MAIN.route) {
                     MainScreen(navController, viewModel)
                 }
-                composable(Screen.SAMPLE_ENUM_SETTING.route) {
-                    SampleEnumSettingScreen(viewModel)
+                composable(Screen.DYNAMIC_VOLUME.route) {
+                    DynamicVolumeScreen(
+                        viewModel.settings.dynamicVolumeUiState.collectAsState().value,
+                        viewModel.settings.setDynamicVolume)
                 }
             }
         }
@@ -85,11 +90,11 @@ fun MainScreen(
         }
         Row(
             Modifier.clickable(onClick = {
-                navController.navigate(Screen.SAMPLE_ENUM_SETTING.route)
+                navController.navigate(Screen.DYNAMIC_VOLUME.route)
             }),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Sample enum setting: ${viewModel.enumSettingValue.label}")
+            Text(text = "Dynamic Volume (${settings.dynamicVolumeUiState.collectAsState().value.value.label})")
         }
     }
 }
@@ -107,16 +112,18 @@ fun BooleanSettingSwitch(
 }
 
 @Composable
-fun SampleEnumSettingScreen(viewModel: MainViewModel) {
+fun DynamicVolumeScreen(
+    uiState: ReceiverSettingUiState<AudysseyDynamicVolume>,
+    setValue: (AudysseyDynamicVolume) -> Unit)
+{
     Column {
-        MainViewModel.EnumSettingOptions.values().forEach {
+        AudysseyDynamicVolume.values().forEach {
             Text(
-                it.label,
-                modifier = Modifier.clickable {
-                    viewModel.enumSettingValue = it
-                },
-                fontWeight = if (it == viewModel.enumSettingValue)
-                    FontWeight.Bold else FontWeight.Normal
+                modifier = Modifier.clickable { setValue(it) }.padding(all = 16.dp),
+                text = it.label,
+                fontWeight = if (it == uiState.value)
+                    FontWeight.Bold else FontWeight.Normal,
+                color = if (uiState.isAvailable()) Color.Black else Color.Gray
             )
         }
     }

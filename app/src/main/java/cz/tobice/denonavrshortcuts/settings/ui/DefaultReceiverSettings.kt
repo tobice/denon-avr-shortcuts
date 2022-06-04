@@ -3,13 +3,12 @@ package cz.tobice.denonavrshortcuts.settings.ui
 import android.util.Log
 import cz.tobice.denonavrshortcuts.core.DispatcherProviderModule.IODispatcher
 import cz.tobice.denonavrshortcuts.core.ErrorMessage
-import cz.tobice.denonavrshortcuts.settings.enums.EnumSetting
-import cz.tobice.denonavrshortcuts.settings.enums.audio.AudysseyDynamicVolume
 import cz.tobice.denonavrshortcuts.settings.repositories.AudysseySettings
 import cz.tobice.denonavrshortcuts.settings.repositories.AudysseySettingsRepository
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettings
 import cz.tobice.denonavrshortcuts.settings.repositories.SurroundParameterSettingsRepository
 import cz.tobice.denonavrshortcuts.utils.combineStates
+import cz.tobice.denonavrshortcuts.utils.flatMap
 import cz.tobice.denonavrshortcuts.utils.mapState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -18,8 +17,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 private val TAG = DefaultReceiverSettings::class.simpleName!!
@@ -29,9 +26,6 @@ class DefaultReceiverSettings @Inject constructor(
     private val surroundParameterSettingsRepository: SurroundParameterSettingsRepository,
     private val audysseySettingsRepository: AudysseySettingsRepository,
 ) : ReceiverSettings {
-
-    /** Mutex to prevent simultaneous updates to settings */
-    private val mutex = Mutex()
 
     /** State of Audio > Surround Parameter settings as fetched from the receiver */
     private val surroundParameterSettings = MutableStateFlow<SurroundParameterSettings?>(null)
@@ -43,53 +37,33 @@ class DefaultReceiverSettings @Inject constructor(
     // Center Spread
     //
 
-    private val centerSpreadValue = surroundParameterSettings.mapState { it?.centerSpread }
-    private val dirtyCenterSpreadValue = MutableStateFlow<Boolean?>(null)
-
-    /** UI state of the Center Spread setting */
-    override val centerSpreadUiState =
-        createBooleanSettingUiState(centerSpreadValue, dirtyCenterSpreadValue)
-
-    /** Set the Center Spread setting value. */
-    override val setCenterSpread = { value: Boolean ->
-        dirtyCenterSpreadValue.value = value
-
-        safelyChangeSetting {
+    private val centerSpreadControl = SettingControl(
+        receiverValueFlow = surroundParameterSettings.mapState { it?.centerSpread },
+        setReceiverValue = { value ->
             surroundParameterSettingsRepository
                 .setCenterSpread(value)
-                .map { loadSurroundParameterSettings() }
-                .recoverCatching(handleError())
-
-            dirtyCenterSpreadValue.value = null
+                .flatMap { loadSurroundParameterSettings() }
         }
-    }
+    )
+
+    override val centerSpreadUiState = centerSpreadControl.uiState
+    override val setCenterSpread = centerSpreadControl.setValue
 
     //
     // Audyssey Dynamic Volume
     //
 
-    private val dynamicVolumeValue = audysseySettings.mapState { it?.dynamicVolume }
-    private val dirtyDynamicVolumeValue = MutableStateFlow<AudysseyDynamicVolume?>(null)
-
-    /** UI state of the Audyssey Dynamic Volume setting */
-    override val dynamicVolumeUiState: StateFlow<ReceiverSettingUiState<AudysseyDynamicVolume>>
-        = createEnumSettingUiState(dynamicVolumeValue, dirtyDynamicVolumeValue)
-
-    /** Set the Center Spread setting value. */
-    override val setDynamicVolume = { value: AudysseyDynamicVolume ->
-        dirtyDynamicVolumeValue.value = value
-
-        safelyChangeSetting {
+    private val dynamicVolumeControl = SettingControl(
+        receiverValueFlow = audysseySettings.mapState { it?.dynamicVolume },
+        setReceiverValue = { value ->
             audysseySettingsRepository
                 .setDynamicVolume(value)
-                .map { loadAudysseySettings() }
-                .recoverCatching(handleError())
-
-            dirtyDynamicVolumeValue.value = null
+                .flatMap { loadAudysseySettings() }
         }
-    }
+    )
 
-    // TODO: Figure out how to avoid duplicating logic for each setting
+    override val dynamicVolumeUiState = dynamicVolumeControl.uiState
+    override val setDynamicVolume = dynamicVolumeControl.setValue
 
     //
     // All settings
@@ -140,53 +114,55 @@ class DefaultReceiverSettings @Inject constructor(
     // Helpers
     //
 
-    private fun safelyChangeSetting(changeSetting: suspend () -> Unit) {
-        coroutineScope.launch {
-            mutex.withLock {
-                changeSetting()
+    /**
+     * Internal helper class that exposes APIs for rendering (via [ReceiverSettingUiState]) and
+     * changing (via [setValue]) a single receiver setting.
+     *
+     * When a caller attempts to change the receiver's value via [setValue], the class holds
+     * the target value as dirty value and exposes it via the [uiState] until the operation finishes
+     * and a fresh value (changed or not changed) is obtained from the receiver.
+     *
+     * This means that the new value is immediately reflected in the UI (good for the user), together
+     * with the [ReceiverSettingUiState.Status.UPDATING] status.
+     */
+    private inner class SettingControl<T>(
+        /** The latest setting value obtained from the receiver */
+        receiverValueFlow: StateFlow<T?>,
+
+        /** A callback to change the setting's value on the receiver */
+        private val setReceiverValue: suspend (value: T) -> Result<Unit>
+    ) {
+        private val dirtyValueFlow = MutableStateFlow<T?>(null)
+
+        val uiState: StateFlow<ReceiverSettingUiState<T>> =
+            combineStates(
+                receiverValueFlow,
+                dirtyValueFlow,
+            ) { value, dirtyValue ->
+                ReceiverSettingUiState(
+                    value = dirtyValue ?: value,
+                    status = if (value == null) {
+                        ReceiverSettingUiState.Status.NOT_AVAILABLE
+                    } else if (dirtyValue != null) {
+                        ReceiverSettingUiState.Status.UPDATING
+                    } else {
+                        ReceiverSettingUiState.Status.READY
+                    }
+                )
             }
-        }
-    }
 
-    private fun createBooleanSettingUiState(
-        valueFlow: StateFlow<Boolean?>,
-        dirtyValueFlow: StateFlow<Boolean?>
-    ): StateFlow<ReceiverSettingUiState<Boolean>> {
-        return combineStates(
-            valueFlow,
-            dirtyValueFlow,
-        ) { value, dirtyValue ->
-            ReceiverSettingUiState(
-                value = dirtyValue ?: value,
-                status = if (value == null) {
-                    ReceiverSettingUiState.Status.NOT_AVAILABLE
-                } else if (dirtyValue != null) {
-                    ReceiverSettingUiState.Status.UPDATING
-                } else {
-                    ReceiverSettingUiState.Status.READY
-                }
-            )
-        }
-    }
+        val setValue: (value: T) -> Unit = { safeSetValue(it) }
 
-    private inline fun <reified T : Enum<T>>createEnumSettingUiState(
-        valueFlow: StateFlow<T?>,
-        dirtyValueFlow: StateFlow<T?>
-    ): StateFlow<ReceiverSettingUiState<T>> {
-        return combineStates(
-            valueFlow,
-            dirtyValueFlow,
-        ) { value, dirtyValue ->
-            ReceiverSettingUiState(
-                value = dirtyValue ?: value,
-                status = if (value == null) {
-                    ReceiverSettingUiState.Status.NOT_AVAILABLE
-                } else if (dirtyValue != null) {
-                    ReceiverSettingUiState.Status.UPDATING
-                } else {
-                    ReceiverSettingUiState.Status.READY
-                }
-            )
+        // Using @Synchronized to avoid potential race conditions. Coroutine Mutex would probably be
+        // a better fit, but for an unknown reason the Result object returned by setReceiverValue was
+        // always successful regardless of the actual outcome when using a Mutex ¯\_(ツ)_/¯
+        @Synchronized
+        private fun safeSetValue(value: T) {
+            dirtyValueFlow.value = value
+            coroutineScope.launch {
+                setReceiverValue(value).recover(handleError())
+                dirtyValueFlow.value = null
+            }
         }
     }
 }

@@ -157,7 +157,7 @@ class DefaultReceiverSettings @Inject constructor(
             dirtyValueFlow,
         ) { value, dirtyValue ->
             ReceiverSettingUiState(
-                value = dirtyValue ?: value ?: false,
+                value = dirtyValue ?: value,
                 status = if (value == null) {
                     ReceiverSettingUiState.Status.NOT_AVAILABLE
                 } else if (dirtyValue != null) {
@@ -178,7 +178,7 @@ class DefaultReceiverSettings @Inject constructor(
             dirtyValueFlow,
         ) { value, dirtyValue ->
             ReceiverSettingUiState(
-                value = dirtyValue ?: value ?: enumValues<T>()[0],
+                value = dirtyValue ?: value,
                 status = if (value == null) {
                     ReceiverSettingUiState.Status.NOT_AVAILABLE
                 } else if (dirtyValue != null) {

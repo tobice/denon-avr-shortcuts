@@ -6,8 +6,7 @@ data class ReceiverSettingUiState<T>(
      * Current value of the setting to be shown in the UI (not necessarily the actual value on the
      * receiver).
      */
-    // TODO: Make this nullable. It makes more sense as sometimes the value is not available.
-    val value: T,
+    val value: T?,
 
     /** The setting's status */
     val status: Status,

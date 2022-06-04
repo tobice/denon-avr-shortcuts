@@ -58,12 +58,12 @@ class DefaultReceiverSettingsTest {
     //
 
     @Test
-    fun `Center Spread is off and not available on init`() = runTest {
+    fun `Center Spread is not available on init`() = runTest {
         val settings = getInstance(this)
 
         settings.centerSpreadUiState.test {
             awaitItem() shouldBe ReceiverSettingUiState(
-                value = false, status = Status.NOT_AVAILABLE
+                value = null, status = Status.NOT_AVAILABLE
             )
         }
     }
@@ -82,13 +82,13 @@ class DefaultReceiverSettingsTest {
     }
 
     @Test
-    fun `Center Spread is off and unavailable when loaded but reported as unavailable`() {
+    fun `Center Spread unavailable when loaded but reported as unavailable`() {
         surroundParameterSettingsRepository.centerSpread = null
 
         runWithLoadedSettings { settings ->
             settings.centerSpreadUiState.test {
                 awaitItem() shouldBe ReceiverSettingUiState(
-                    value = false, Status.NOT_AVAILABLE
+                    value = null, Status.NOT_AVAILABLE
                 )
             }
         }
@@ -140,12 +140,12 @@ class DefaultReceiverSettingsTest {
     //
 
     @Test
-    fun `Dynamic Volume is Heavy and not available on init`() = runTest {
+    fun `Dynamic Volume not available on init`() = runTest {
         val settings = getInstance(this)
 
         settings.dynamicVolumeUiState.test {
             awaitItem() shouldBe ReceiverSettingUiState(
-                value = AudysseyDynamicVolume.HEAVY, status = Status.NOT_AVAILABLE
+                value = null, status = Status.NOT_AVAILABLE
             )
         }
     }
@@ -164,13 +164,13 @@ class DefaultReceiverSettingsTest {
     }
 
     @Test
-    fun `Dynamic Volume is HEAVY and unavailable when loaded but reported as unavailable`() {
+    fun `Dynamic Volume unavailable when loaded but reported as unavailable`() {
         audysseySettingsRepository.dynamicVolume = null
 
         runWithLoadedSettings { settings ->
             settings.dynamicVolumeUiState.test {
                 awaitItem() shouldBe ReceiverSettingUiState(
-                    value = AudysseyDynamicVolume.HEAVY, Status.NOT_AVAILABLE
+                    value = null, Status.NOT_AVAILABLE
                 )
             }
         }

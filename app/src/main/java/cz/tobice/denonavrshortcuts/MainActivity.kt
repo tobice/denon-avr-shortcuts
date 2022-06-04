@@ -94,7 +94,8 @@ fun MainScreen(
             }),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Dynamic Volume (${settings.dynamicVolumeUiState.collectAsState().value.value.label})")
+            val valueLabel = settings.dynamicVolumeUiState.collectAsState().value.value?.label ?: ""
+            Text(text = "Dynamic Volume (${valueLabel})")
         }
     }
 }
@@ -105,7 +106,7 @@ fun BooleanSettingSwitch(
 ) {
     Text(text = label, color = if (uiState.isAvailable()) Color.Black else Color.Gray)
     Switch(
-        checked = uiState.value,
+        checked = uiState.value ?: false,
         enabled = uiState.isChangeable(),
         onCheckedChange = { setValue(it) }
     )

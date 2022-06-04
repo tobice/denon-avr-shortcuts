@@ -13,7 +13,7 @@ import dagger.hilt.testing.TestInstallIn
     components = [ActivityRetainedComponent::class],
     replaces = [ReceiverUrlProviderModule::class]
 )
-class TestReceiverUrlProviderModule {
+object TestReceiverUrlProviderModule {
 
     @Provides
     @ReceiverUrlProviderModule.ReceiverUrl

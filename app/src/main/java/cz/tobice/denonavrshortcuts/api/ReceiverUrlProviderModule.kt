@@ -13,7 +13,7 @@ import javax.inject.Qualifier
 /** Provides the URL of the receiver that the app should connect to. */
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-class ReceiverUrlProviderModule {
+object  ReceiverUrlProviderModule {
 
     @Qualifier
     @Retention(AnnotationRetention.BINARY)

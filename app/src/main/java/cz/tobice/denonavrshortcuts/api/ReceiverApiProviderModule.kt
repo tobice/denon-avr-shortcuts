@@ -12,7 +12,7 @@ import retrofit2.converter.simplexml.SimpleXmlConverterFactory
 
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-class ReceiverApiProviderModule {
+object ReceiverApiProviderModule {
 
     @Provides
     fun provideDenonReceiverApi(
